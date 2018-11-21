@@ -3,6 +3,7 @@
 // Import the module and reference it with the alias vscode in your code belows
 import * as vscode from "vscode";
 import { MmixCompletionItemProvider } from "./MmixCompletionItemProvider";
+import { MmixHoverProvider } from "./MmixHoverProvider";
 
 const MMS_MODE: vscode.DocumentFilter = { language: "mms", scheme: "file" };
 
@@ -17,6 +18,10 @@ export function activate(context: vscode.ExtensionContext) {
       new MmixCompletionItemProvider(),
       ","
     )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider(MMS_MODE, new MmixHoverProvider())
   );
 }
 

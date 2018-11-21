@@ -1,4 +1,5 @@
 import { MmixDocument } from "./MmixDocument";
+import { MmixDocumentParser } from "./MmixDocumentParser";
 import * as vscode from "vscode";
 export class MmixCompletionItemProvider
   implements vscode.CompletionItemProvider {
@@ -7,7 +8,7 @@ export class MmixCompletionItemProvider
     position: vscode.Position,
     token: vscode.CancellationToken
   ): Thenable<vscode.CompletionItem[]> {
-    const mmixDocument = new MmixDocument(document);
+    const mmixDocument = MmixDocumentParser.parse(document);
     return Promise.resolve(
       mmixDocument
         .getMatchingLabels(position)

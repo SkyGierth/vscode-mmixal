@@ -4,12 +4,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Import the module and reference it with the alias vscode in your code belows
 const vscode = require("vscode");
 const MmixCompletionItemProvider_1 = require("./MmixCompletionItemProvider");
+const MmixHoverProvider_1 = require("./MmixHoverProvider");
 const MMS_MODE = { language: "mms", scheme: "file" };
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 function activate(context) {
     console.log("MMIX extension activated");
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(MMS_MODE, new MmixCompletionItemProvider_1.MmixCompletionItemProvider(), ","));
+    context.subscriptions.push(vscode.languages.registerHoverProvider(MMS_MODE, new MmixHoverProvider_1.MmixHoverProvider()));
 }
 exports.activate = activate;
 // this method is called when your extension is deactivated

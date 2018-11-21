@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 class AliasLabel {
-    constructor(definition, name, aliasFor) {
-        this.definition = definition;
+    constructor(position, name, aliasFor) {
+        this.position = position;
         this.name = name;
         this.aliasFor = aliasFor;
     }
