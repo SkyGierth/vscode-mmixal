@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { MmixDocument } from "./MmixDocument";
 
 export class MmixHoverProvider implements vscode.HoverProvider {
   public provideHover(

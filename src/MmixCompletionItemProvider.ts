@@ -1,4 +1,3 @@
-import { MmixDocument } from "./MmixDocument";
 import { MmixDocumentParser } from "./MmixDocumentParser";
 import * as vscode from "vscode";
 export class MmixCompletionItemProvider
