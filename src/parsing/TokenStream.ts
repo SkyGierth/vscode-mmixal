@@ -245,7 +245,7 @@ export class TokenStream implements IStream<Token> {
       "rD",
       "rE",
       "rF",
-      "rG",
+      "rG", | null
       "rH",
       "rI",
       "rJ",

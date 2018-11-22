@@ -228,7 +228,7 @@ class TokenStream {
             "rD",
             "rE",
             "rF",
-            "rG",
+            "rG",  | null,
             "rH",
             "rI",
             "rJ",
