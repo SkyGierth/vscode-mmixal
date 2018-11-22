@@ -2,6 +2,7 @@ import { IStream } from "./IStream";
 import { Token } from "./Token";
 import { InputStream } from "./InputStream";
 import { TokenType } from "./TokenType";
+import { parse } from "path";
 
 export class TokenStream implements IStream<Token> {
   constructor(private _inputStream: InputStream) {}
@@ -30,10 +31,310 @@ export class TokenStream implements IStream<Token> {
       };
     }
 
-    if (char.match(/^[\d#]$/)) {
+    if (char === "$") {
+      return this.readRegister();
+    }
+
+    if (char.match(/^\d$/)) {
+      return this.readNum();
     }
 
     throw this._inputStream.error(`Cannot handle character "${char}"`);
+  }
+
+  private readIdentifier(): Token {
+    const identifier = this.readWhile(
+      c => [" ", "\t", "\n", "\r", ","].indexOf(c) > -1
+    );
+
+    return {
+      type: TokenType.Identifier,
+      value: identifier
+    };
+  }
+
+  private static isOperation(identifier: string): boolean {
+    const operations = [
+      "2ADDU",
+      "4ADDU",
+      "8ADDU",
+      "16ADDU",
+      "ADD",
+      "ADDU",
+      "AND",
+      "ANDNH",
+      "ANDNL",
+      "ANDNMH",
+      "ANDNML",
+      "BDIF",
+      "BEV",
+      "BN",
+      "BNN",
+      "BNP",
+      "BNZ",
+      "BOD",
+      "BP",
+      "BSPEC",
+      "BYTE",
+      "BZ",
+      "CMP",
+      "CMPU",
+      "CSEV",
+      "CSN",
+      "CSNN",
+      "CSNP",
+      "CSNZ",
+      "CSOD",
+      "CSP",
+      "CSWAP",
+      "CSZ",
+      "DIV",
+      "DIVU",
+      "ESPEC",
+      "EXPR",
+      "FADD",
+      "FCMP",
+      "FCMPE",
+      "FDIV",
+      "FEQL",
+      "FEQLE",
+      "FIX",
+      "FIXU",
+      "FLOT",
+      "FLOTU",
+      "FMUL",
+      "FREM",
+      "FSQRT",
+      "FSUB",
+      "FUN",
+      "FUNE",
+      "GET",
+      "GETA",
+      "GO",
+      "GREG",
+      "I_BIT",
+      "INCH",
+      "INCL",
+      "INCMH",
+      "INCML",
+      "IS",
+      "JMP",
+      "LDA",
+      "LDB",
+      "LDBU",
+      "LDHT",
+      "LDO",
+      "LDOU",
+      "LDSF",
+      "LDT",
+      "LDTU",
+      "LDUNC",
+      "LDVTS",
+      "LDW",
+      "LDWU",
+      "LOC",
+      "LOCAL",
+      "MOR",
+      "MUL",
+      "MULU",
+      "MUX",
+      "MXOR",
+      "NAND",
+      "NEG",
+      "NEGU",
+      "NNIX",
+      "NOR",
+      "NXOR",
+      "O_BIT",
+      "OCTA",
+      "ODIF",
+      "OR",
+      "ORH",
+      "ORL",
+      "ORMH",
+      "ORML",
+      "ORN",
+      "PBEV",
+      "PBN",
+      "PBNN",
+      "PBNP",
+      "PBNZ",
+      "PBOD",
+      "PBP",
+      "PBZ",
+      "POP",
+      "PREFIX",
+      "PREGO",
+      "PRELD",
+      "PREST",
+      "PUSHGO",
+      "PUSHJ",
+      "PUT",
+      "RESUME",
+      "SAVE",
+      "SET",
+      "SETH",
+      "SETL",
+      "SETMH",
+      "SETML",
+      "SFLOT",
+      "SFLOTU",
+      "SL",
+      "SLU",
+      "SR",
+      "SRU",
+      "STB",
+      "STBU",
+      "STCO",
+      "STHT",
+      "STO",
+      "STOU",
+      "STSF",
+      "STT",
+      "STTU",
+      "STUNC",
+      "STW",
+      "STWU",
+      "SUB",
+      "SUBU",
+      "SWYM",
+      "SYNC",
+      "SYNCD",
+      "TDIF",
+      "TETRA",
+      "TRAP",
+      "TRIP",
+      "UNSAVE",
+      "WDIF",
+      "WYDEXOR",
+      "ZSEV",
+      "ZSN",
+      "ZSNN",
+      "ZSNP",
+      "ZSNZ",
+      "ZSOD",
+      "ZSP",
+      "ZSZ"
+    ];
+  }
+
+  private static isKeyWord(identifier: string): boolean {
+    const keyWords = [
+      "rA",
+      "rB",
+      "rC",
+      "rD",
+      "rE",
+      "rF",
+      "rG",
+      "rH",
+      "rI",
+      "rJ",
+      "rK",
+      "rL",
+      "rM",
+      "rN",
+      "rO",
+      "rP",
+      "rQ",
+      "rR",
+      "rS",
+      "rT",
+      "rU",
+      "rV",
+      "rW",
+      "rX",
+      "rY",
+      "rZ",
+      "rBB",
+      "rTT",
+      "rWW",
+      "rXX",
+      "rYY",
+      "rZZ",
+      "Text_Segment",
+      "Data_Segment",
+      "Pool_Segment",
+      "Stack_Segment",
+      "StdErr",
+      "StdIn",
+      "StdOut",
+      "Fopen",
+      "Fclose",
+      "Fread",
+      "Fwrite",
+      "Fgets",
+      "Fputs",
+      "Fgetws",
+      "Fputws",
+      "Ftell",
+      "Fseek",
+      "TextRead",
+      "TextWrite",
+      "BinaryRead",
+      "BinaryWrite",
+      "BinaryReadWrite",
+      "Halt"
+    ];
+
+    return keyWords.indexOf(identifier) > -1;
+  }
+
+  private readNum(): Token {
+    const num = this.readWhile(
+      c => [" ", "\t", "\n", "\r", ","].indexOf(c) > -1
+    );
+
+    return {
+      type: TokenType.Number,
+      value: parseInt(num)
+    };
+  }
+
+  private readHex(): Token {
+    let prefix = this._inputStream.next();
+
+    if (prefix !== "#") {
+      throw this._inputStream.error(`Expected "#" but got "${prefix}"`);
+    }
+
+    let hex = "";
+    let char: string;
+    do {
+      char = this._inputStream.next();
+      if (!char.match(/^\d$/)) {
+        throw this._inputStream.error(`Unexpected character ${char}`);
+      }
+      hex += char;
+    } while ([" ", "\t", "\n", "\r", ","].indexOf(char) > 0);
+
+    return {
+      type: TokenType.Number,
+      value: parseInt("0x" + hex)
+    };
+  }
+
+  private readRegister(): Token {
+    let prefix = this._inputStream.next();
+
+    if (prefix !== "$") {
+      throw this._inputStream.error(`Expected "$" but got "${prefix}"`);
+    }
+
+    let register = "";
+    let char: string;
+    do {
+      char = this._inputStream.next();
+      if (!char.match(/^\d$/)) {
+        throw this._inputStream.error(`Unexpected character ${char}`);
+      }
+      register += char;
+    } while ([" ", "\t", "\n", "\r", ","].indexOf(char) > 0);
+
+    return {
+      type: TokenType.Register,
+      value: parseInt(register)
+    };
   }
 
   private readNumeric(): Token {
@@ -51,7 +352,7 @@ export class TokenStream implements IStream<Token> {
     }
 
     if (numeric === NaN) {
-      throw new this._inputStream.error(`"${number}" is not a valid number`);
+      throw this._inputStream.error(`"${number}" is not a valid number`);
     }
 
     return {

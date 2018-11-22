@@ -38,7 +38,7 @@ export class InputStream implements IStream<string> {
   /**
    * Returns an error with a specified message and the information about the current position
    */
-  public error(message: string) {
+  public error(message: string): Error {
     return new Error(`${message} (at line ${this._line}:${this._column})`);
   }
 }
