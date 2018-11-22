@@ -12,7 +12,7 @@ export class InputStream implements IStream<string> {
    * @returns the next character from the stream
    */
   public next(): string {
-    const char = this._input[this._position];
+    const char = this._input[this._position++];
     if (char === "\n") {
       this._line++;
       this._column = 0;
@@ -32,7 +32,7 @@ export class InputStream implements IStream<string> {
   }
 
   public eof(): boolean {
-    return this.peek() === "";
+    return this.peek() === undefined;
   }
 
   /**

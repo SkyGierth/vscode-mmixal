@@ -4,8 +4,9 @@ const TokenType_1 = require("./TokenType");
 class TokenStream {
     constructor(_inputStream) {
         this._inputStream = _inputStream;
+        this._currentToken = null;
     }
-    next() {
+    readNext() {
         this.readWhile(TokenStream.isWhiteSpace);
         if (this._inputStream.eof()) {
             return null;
@@ -13,7 +14,7 @@ class TokenStream {
         const char = this._inputStream.peek();
         if (char === "%") {
             this.readWhile(x => x !== "\n");
-            return this.next();
+            return this.readNext();
         }
         if (char === '"') {
             return this.readString();
@@ -27,15 +28,30 @@ class TokenStream {
         if (char === "$") {
             return this.readRegister();
         }
-        if (char.match(/^\d$/)) {
-            return this.readNum();
+        if (char === "#") {
+            return this.readHex();
         }
-        throw this._inputStream.error(`Cannot handle character "${char}"`);
+        if (char.match(/^\d$/)) {
+            return this.readNumeric();
+        }
+        return this.readIdentifier();
     }
     readIdentifier() {
-        const identifier = this.readWhile(c => [" ", "\t", "\n", "\r", ","].indexOf(c) > -1);
+        const identifier = this.readWhile(c => [" ", "\t", "\n", "\r", ","].indexOf(c) === -1);
+        if (TokenStream.isOperation(identifier)) {
+            return {
+                type: TokenType_1.TokenType.Operation,
+                value: identifier
+            };
+        }
+        if (TokenStream.isKeyWord(identifier)) {
+            return {
+                type: TokenType_1.TokenType.Keyword,
+                value: identifier
+            };
+        }
         return {
-            type: TokenType_1.TokenType.Identifier,
+            type: TokenType_1.TokenType.Label,
             value: identifier
         };
     }
@@ -202,6 +218,7 @@ class TokenStream {
             "ZSP",
             "ZSZ"
         ];
+        return operations.indexOf(identifier) > -1;
     }
     static isKeyWord(identifier) {
         const keyWords = [
@@ -259,16 +276,10 @@ class TokenStream {
             "BinaryRead",
             "BinaryWrite",
             "BinaryReadWrite",
-            "Halt"
+            "Halt",
+            "@"
         ];
         return keyWords.indexOf(identifier) > -1;
-    }
-    readNum() {
-        const num = this.readWhile(c => [" ", "\t", "\n", "\r", ","].indexOf(c) > -1);
-        return {
-            type: TokenType_1.TokenType.Number,
-            value: parseInt(num)
-        };
     }
     readHex() {
         let prefix = this._inputStream.next();
@@ -277,13 +288,13 @@ class TokenStream {
         }
         let hex = "";
         let char;
-        do {
-            char = this._inputStream.next();
-            if (!char.match(/^\d$/)) {
+        while ((char = this._inputStream.next()) &&
+            [" ", "\t", "\n", "\r", ","].indexOf(char) === -1) {
+            if (!char.match(/^[a-fA-F\d]$/)) {
                 throw this._inputStream.error(`Unexpected character ${char}`);
             }
             hex += char;
-        } while ([" ", "\t", "\n", "\r", ","].indexOf(char) > 0);
+        }
         return {
             type: TokenType_1.TokenType.Number,
             value: parseInt("0x" + hex)
@@ -328,17 +339,42 @@ class TokenStream {
         };
     }
     readString() {
-        const string = this.readWhile(c => c !== '"');
+        var escaped = false, str = "";
+        this._inputStream.next();
+        while (!this._inputStream.eof()) {
+            var ch = this._inputStream.next();
+            if (escaped) {
+                str += ch;
+                escaped = false;
+            }
+            else if (ch === "\\") {
+                escaped = true;
+            }
+            else if (ch === '"') {
+                break;
+            }
+            else {
+                str += ch;
+            }
+        }
         return {
             type: TokenType_1.TokenType.String,
-            value: string
+            value: str
         };
     }
     peek() {
-        throw new Error("Method not implemented.");
+        if (!this._currentToken) {
+            this._currentToken = this.readNext();
+        }
+        return this._currentToken;
+    }
+    next() {
+        const token = this._currentToken;
+        this._currentToken = null;
+        return token || this.readNext();
     }
     eof() {
-        throw new Error("Method not implemented.");
+        return this.peek() === null;
     }
     error(message) {
         throw new Error("Method not implemented.");

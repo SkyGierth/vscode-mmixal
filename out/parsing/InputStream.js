@@ -12,7 +12,7 @@ class InputStream {
      * @returns the next character from the stream
      */
     next() {
-        const char = this._input[this._position];
+        const char = this._input[this._position++];
         if (char === "\n") {
             this._line++;
             this._column = 0;
@@ -30,7 +30,7 @@ class InputStream {
         return this._input[this._position];
     }
     eof() {
-        return this.peek() === "";
+        return this.peek() === undefined;
     }
     /**
      * Returns an error with a specified message and the information about the current position

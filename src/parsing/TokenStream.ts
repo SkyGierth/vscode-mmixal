@@ -2,12 +2,11 @@ import { IStream } from "./IStream";
 import { Token } from "./Token";
 import { InputStream } from "./InputStream";
 import { TokenType } from "./TokenType";
-import { parse } from "path";
 
 export class TokenStream implements IStream<Token> {
   constructor(private _inputStream: InputStream) {}
 
-  public next(): Token<any> | null {
+  public readNext(): Token<any> | null {
     this.readWhile(TokenStream.isWhiteSpace);
 
     if (this._inputStream.eof()) {
@@ -17,7 +16,7 @@ export class TokenStream implements IStream<Token> {
     const char = this._inputStream.peek();
     if (char === "%") {
       this.readWhile(x => x !== "\n");
-      return this.next();
+      return this.readNext();
     }
 
     if (char === '"') {
@@ -35,20 +34,38 @@ export class TokenStream implements IStream<Token> {
       return this.readRegister();
     }
 
-    if (char.match(/^\d$/)) {
-      return this.readNum();
+    if (char === "#") {
+      return this.readHex();
     }
 
-    throw this._inputStream.error(`Cannot handle character "${char}"`);
+    if (char.match(/^\d$/)) {
+      return this.readNumeric();
+    }
+
+    return this.readIdentifier();
   }
 
   private readIdentifier(): Token {
     const identifier = this.readWhile(
-      c => [" ", "\t", "\n", "\r", ","].indexOf(c) > -1
+      c => [" ", "\t", "\n", "\r", ","].indexOf(c) === -1
     );
 
+    if (TokenStream.isOperation(identifier)) {
+      return {
+        type: TokenType.Operation,
+        value: identifier
+      };
+    }
+
+    if (TokenStream.isKeyWord(identifier)) {
+      return {
+        type: TokenType.Keyword,
+        value: identifier
+      };
+    }
+
     return {
-      type: TokenType.Identifier,
+      type: TokenType.Label,
       value: identifier
     };
   }
@@ -216,6 +233,8 @@ export class TokenStream implements IStream<Token> {
       "ZSP",
       "ZSZ"
     ];
+
+    return operations.indexOf(identifier) > -1;
   }
 
   private static isKeyWord(identifier: string): boolean {
@@ -274,21 +293,11 @@ export class TokenStream implements IStream<Token> {
       "BinaryRead",
       "BinaryWrite",
       "BinaryReadWrite",
-      "Halt"
+      "Halt",
+      "@"
     ];
 
     return keyWords.indexOf(identifier) > -1;
-  }
-
-  private readNum(): Token {
-    const num = this.readWhile(
-      c => [" ", "\t", "\n", "\r", ","].indexOf(c) > -1
-    );
-
-    return {
-      type: TokenType.Number,
-      value: parseInt(num)
-    };
   }
 
   private readHex(): Token {
@@ -300,13 +309,15 @@ export class TokenStream implements IStream<Token> {
 
     let hex = "";
     let char: string;
-    do {
-      char = this._inputStream.next();
-      if (!char.match(/^\d$/)) {
+    while (
+      (char = this._inputStream.next()) &&
+      [" ", "\t", "\n", "\r", ","].indexOf(char) === -1
+    ) {
+      if (!char.match(/^[a-fA-F\d]$/)) {
         throw this._inputStream.error(`Unexpected character ${char}`);
       }
       hex += char;
-    } while ([" ", "\t", "\n", "\r", ","].indexOf(char) > 0);
+    }
 
     return {
       type: TokenType.Number,
@@ -362,19 +373,47 @@ export class TokenStream implements IStream<Token> {
   }
 
   private readString(): Token {
-    const string = this.readWhile(c => c !== '"');
+    var escaped = false,
+      str = "";
+    this._inputStream.next();
+    while (!this._inputStream.eof()) {
+      var ch = this._inputStream.next();
+      if (escaped) {
+        str += ch;
+        escaped = false;
+      } else if (ch === "\\") {
+        escaped = true;
+      } else if (ch === '"') {
+        break;
+      } else {
+        str += ch;
+      }
+    }
 
     return {
       type: TokenType.String,
-      value: string
+      value: str
     };
   }
 
-  public peek(): Token<any> {
-    throw new Error("Method not implemented.");
+  private _currentToken: Token | null = null;
+
+  public peek(): Token<any> | null {
+    if (!this._currentToken) {
+      this._currentToken = this.readNext();
+    }
+
+    return this._currentToken;
   }
+
+  public next(): Token | null {
+    const token = this._currentToken;
+    this._currentToken = null;
+    return token || this.readNext();
+  }
+
   public eof(): boolean {
-    throw new Error("Method not implemented.");
+    return this.peek() === null;
   }
   public error(message: string): void {
     throw new Error("Method not implemented.");
