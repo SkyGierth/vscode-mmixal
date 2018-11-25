@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { Register } from "./Register";
+import { Register } from "./parsing/Register";
 export class MissingRegister extends Register {
   constructor(range: vscode.Range) {
-    super(range, "MISSING", "MISSING", -1);
+    super(-1, range);
   }
 }

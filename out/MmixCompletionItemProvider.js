@@ -1,26 +1,27 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const MmixDocumentParser_1 = require("./MmixDocumentParser");
 const vscode = require("vscode");
 const InputStream_1 = require("./parsing/InputStream");
 const TokenStream_1 = require("./parsing/TokenStream");
+const TokenParser_1 = require("./parsing/TokenParser");
+const MmixDocument_1 = require("./MmixDocument");
 class MmixCompletionItemProvider {
     provideCompletionItems(document, position, token) {
-        const inputStream = new InputStream_1.InputStream(document.getText());
-        const tokenStream = new TokenStream_1.TokenStream(inputStream);
+        let results = [];
         try {
-            while (!tokenStream.eof()) {
-                const next = tokenStream.next();
-                console.log(next);
-            }
+            const inputStream = new InputStream_1.InputStream(document.getText());
+            const tokenStream = new TokenStream_1.TokenStream(inputStream);
+            const parser = new TokenParser_1.TokenParser(tokenStream);
+            const program = parser.parse();
+            const mmixDocument = new MmixDocument_1.MmixDocument(program);
+            results = mmixDocument
+                .getMatchingLabels(position)
+                .map(label => new vscode.CompletionItem(label.name, vscode.CompletionItemKind.Constant));
         }
-        catch (e) {
-            console.error(e);
+        catch (error) {
+            console.error(error);
         }
-        const mmixDocument = MmixDocumentParser_1.MmixDocumentParser.parse(document);
-        return Promise.resolve(mmixDocument
-            .getMatchingLabels(position)
-            .map(label => new vscode.CompletionItem(label.name)));
+        return Promise.resolve(results);
     }
 }
 exports.MmixCompletionItemProvider = MmixCompletionItemProvider;

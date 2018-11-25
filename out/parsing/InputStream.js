@@ -1,11 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const vscode_1 = require("vscode");
 class InputStream {
     constructor(_input) {
         this._input = _input;
         this._position = 0;
         this._line = 0;
         this._column = 0;
+    }
+    get position() {
+        return new vscode_1.Position(this._line, this._column);
     }
     /**
      * Gets the next character from the stream and moves the cursor

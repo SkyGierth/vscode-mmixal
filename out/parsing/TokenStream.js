@@ -1,10 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const TokenType_1 = require("./TokenType");
+const vscode_1 = require("vscode");
 class TokenStream {
     constructor(_inputStream) {
         this._inputStream = _inputStream;
         this._currentToken = null;
+        this._position = _inputStream.position;
+    }
+    get position() {
+        return this._position;
+    }
+    range(startPosition) {
+        return new vscode_1.Range(startPosition, this._inputStream.position);
     }
     readNext() {
         this.readWhile(TokenStream.isWhiteSpace);
@@ -16,13 +24,16 @@ class TokenStream {
             this.readWhile(x => x !== "\n");
             return this.readNext();
         }
+        this._position = this._inputStream.position;
         if (char === '"') {
             return this.readString();
         }
         if (char === ",") {
+            const startPosition = this.position;
             return {
                 type: TokenType_1.TokenType.Punctuation,
-                value: this._inputStream.next()
+                value: this._inputStream.next(),
+                range: this.range(startPosition)
             };
         }
         if (char === "$") {
@@ -37,22 +48,26 @@ class TokenStream {
         return this.readIdentifier();
     }
     readIdentifier() {
+        const startPosition = this.position;
         const identifier = this.readWhile(c => [" ", "\t", "\n", "\r", ","].indexOf(c) === -1);
         if (TokenStream.isOperation(identifier)) {
             return {
                 type: TokenType_1.TokenType.Operation,
-                value: identifier
+                value: identifier,
+                range: this.range(startPosition)
             };
         }
         if (TokenStream.isKeyWord(identifier)) {
             return {
                 type: TokenType_1.TokenType.Keyword,
-                value: identifier
+                value: identifier,
+                range: this.range(startPosition)
             };
         }
         return {
             type: TokenType_1.TokenType.Label,
-            value: identifier
+            value: identifier,
+            range: this.range(startPosition)
         };
     }
     static isOperation(identifier) {
@@ -228,7 +243,7 @@ class TokenStream {
             "rD",
             "rE",
             "rF",
-            "rG",  | null,
+            "rG",
             "rH",
             "rI",
             "rJ",
@@ -282,14 +297,14 @@ class TokenStream {
         return keyWords.indexOf(identifier) > -1;
     }
     readHex() {
+        const startPosition = this.position;
         let prefix = this._inputStream.next();
         if (prefix !== "#") {
             throw this._inputStream.error(`Expected "#" but got "${prefix}"`);
         }
         let hex = "";
-        let char;
-        while ((char = this._inputStream.next()) &&
-            [" ", "\t", "\n", "\r", ","].indexOf(char) === -1) {
+        while ([" ", "\t", "\n", "\r", ","].indexOf(this._inputStream.peek()) === -1) {
+            const char = this._inputStream.next();
             if (!char.match(/^[a-fA-F\d]$/)) {
                 throw this._inputStream.error(`Unexpected character ${char}`);
             }
@@ -297,29 +312,32 @@ class TokenStream {
         }
         return {
             type: TokenType_1.TokenType.Number,
-            value: parseInt("0x" + hex)
+            value: parseInt("0x" + hex),
+            range: this.range(startPosition)
         };
     }
     readRegister() {
+        const startPosition = this.position;
         let prefix = this._inputStream.next();
         if (prefix !== "$") {
             throw this._inputStream.error(`Expected "$" but got "${prefix}"`);
         }
         let register = "";
-        let char;
-        do {
-            char = this._inputStream.next();
+        while ([" ", "\t", "\n", "\r", ","].indexOf(this._inputStream.peek()) === -1) {
+            const char = this._inputStream.next();
             if (!char.match(/^\d$/)) {
                 throw this._inputStream.error(`Unexpected character ${char}`);
             }
             register += char;
-        } while ([" ", "\t", "\n", "\r", ","].indexOf(char) > 0);
+        }
         return {
             type: TokenType_1.TokenType.Register,
-            value: parseInt(register)
+            value: parseInt(register),
+            range: this.range(startPosition)
         };
     }
     readNumeric() {
+        const startPosition = this.position;
         let number = "";
         number += this._inputStream.next();
         number += this.readWhile(c => !!c.match(/^\d$/));
@@ -335,14 +353,16 @@ class TokenStream {
         }
         return {
             type: TokenType_1.TokenType.Number,
-            value: numeric
+            value: numeric,
+            range: this.range(startPosition)
         };
     }
     readString() {
-        var escaped = false, str = "";
+        const startPosition = this.position;
+        let escaped = false, str = "";
         this._inputStream.next();
         while (!this._inputStream.eof()) {
-            var ch = this._inputStream.next();
+            const ch = this._inputStream.next();
             if (escaped) {
                 str += ch;
                 escaped = false;
@@ -359,7 +379,8 @@ class TokenStream {
         }
         return {
             type: TokenType_1.TokenType.String,
-            value: str
+            value: str,
+            range: this.range(startPosition)
         };
     }
     peek() {

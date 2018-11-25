@@ -1,6 +1,11 @@
 import { IStream } from "./IStream";
+import { Position } from "vscode";
 
 export class InputStream implements IStream<string> {
+  public get position(): Position {
+    return new Position(this._line, this._column);
+  }
+
   private _position: number = 0;
   private _line: number = 0;
   private _column: number = 0;

@@ -2,9 +2,22 @@ import { IStream } from "./IStream";
 import { Token } from "./Token";
 import { InputStream } from "./InputStream";
 import { TokenType } from "./TokenType";
+import { Range, Position } from "vscode";
 
 export class TokenStream implements IStream<Token> {
-  constructor(private _inputStream: InputStream) {}
+  private _position: Position;
+
+  public get position(): Position {
+    return this._position;
+  }
+
+  private range(startPosition: Position): Range {
+    return new Range(startPosition, this._inputStream.position);
+  }
+
+  constructor(private _inputStream: InputStream) {
+    this._position = _inputStream.position;
+  }
 
   public readNext(): Token<any> | null {
     this.readWhile(TokenStream.isWhiteSpace);
@@ -19,14 +32,17 @@ export class TokenStream implements IStream<Token> {
       return this.readNext();
     }
 
+    this._position = this._inputStream.position;
     if (char === '"') {
       return this.readString();
     }
 
     if (char === ",") {
+      const startPosition = this.position;
       return {
         type: TokenType.Punctuation,
-        value: this._inputStream.next()
+        value: this._inputStream.next(),
+        range: this.range(startPosition)
       };
     }
 
@@ -46,6 +62,7 @@ export class TokenStream implements IStream<Token> {
   }
 
   private readIdentifier(): Token {
+    const startPosition = this.position;
     const identifier = this.readWhile(
       c => [" ", "\t", "\n", "\r", ","].indexOf(c) === -1
     );
@@ -53,20 +70,23 @@ export class TokenStream implements IStream<Token> {
     if (TokenStream.isOperation(identifier)) {
       return {
         type: TokenType.Operation,
-        value: identifier
+        value: identifier,
+        range: this.range(startPosition)
       };
     }
 
     if (TokenStream.isKeyWord(identifier)) {
       return {
         type: TokenType.Keyword,
-        value: identifier
+        value: identifier,
+        range: this.range(startPosition)
       };
     }
 
     return {
       type: TokenType.Label,
-      value: identifier
+      value: identifier,
+      range: this.range(startPosition)
     };
   }
 
@@ -245,7 +265,7 @@ export class TokenStream implements IStream<Token> {
       "rD",
       "rE",
       "rF",
-      "rG", | null
+      "rG",
       "rH",
       "rI",
       "rJ",
@@ -301,6 +321,7 @@ export class TokenStream implements IStream<Token> {
   }
 
   private readHex(): Token {
+    const startPosition = this.position;
     let prefix = this._inputStream.next();
 
     if (prefix !== "#") {
@@ -308,11 +329,8 @@ export class TokenStream implements IStream<Token> {
     }
 
     let hex = "";
-    let char: string;
-    while (
-      (char = this._inputStream.next()) &&
-      [" ", "\t", "\n", "\r", ","].indexOf(char) === -1
-    ) {
+    while ([" ", "\t", "\n", "\r", ","].indexOf(this._inputStream.peek()) === -1) {
+      const char = this._inputStream.next();
       if (!char.match(/^[a-fA-F\d]$/)) {
         throw this._inputStream.error(`Unexpected character ${char}`);
       }
@@ -321,11 +339,13 @@ export class TokenStream implements IStream<Token> {
 
     return {
       type: TokenType.Number,
-      value: parseInt("0x" + hex)
+      value: parseInt("0x" + hex),
+      range: this.range(startPosition)
     };
   }
 
   private readRegister(): Token {
+    const startPosition = this.position;
     let prefix = this._inputStream.next();
 
     if (prefix !== "$") {
@@ -333,22 +353,23 @@ export class TokenStream implements IStream<Token> {
     }
 
     let register = "";
-    let char: string;
-    do {
-      char = this._inputStream.next();
+    while ([" ", "\t", "\n", "\r", ","].indexOf(this._inputStream.peek()) === -1) {
+      const char = this._inputStream.next();
       if (!char.match(/^\d$/)) {
         throw this._inputStream.error(`Unexpected character ${char}`);
       }
       register += char;
-    } while ([" ", "\t", "\n", "\r", ","].indexOf(char) > 0);
+    }
 
     return {
       type: TokenType.Register,
-      value: parseInt(register)
+      value: parseInt(register),
+      range: this.range(startPosition)
     };
   }
 
   private readNumeric(): Token {
+    const startPosition = this.position;
     let number = "";
 
     number += this._inputStream.next();
@@ -368,16 +389,18 @@ export class TokenStream implements IStream<Token> {
 
     return {
       type: TokenType.Number,
-      value: numeric
+      value: numeric,
+      range: this.range(startPosition)
     };
   }
 
   private readString(): Token {
-    var escaped = false,
+    const startPosition = this.position;
+    let escaped = false,
       str = "";
     this._inputStream.next();
     while (!this._inputStream.eof()) {
-      var ch = this._inputStream.next();
+      const ch = this._inputStream.next();
       if (escaped) {
         str += ch;
         escaped = false;
@@ -392,7 +415,8 @@ export class TokenStream implements IStream<Token> {
 
     return {
       type: TokenType.String,
-      value: str
+      value: str,
+      range: this.range(startPosition)
     };
   }
 

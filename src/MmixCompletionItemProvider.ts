@@ -1,7 +1,8 @@
-import { MmixDocumentParser } from "./MmixDocumentParser";
 import * as vscode from "vscode";
 import { InputStream } from "./parsing/InputStream";
 import { TokenStream } from "./parsing/TokenStream";
+import { TokenParser } from "./parsing/TokenParser";
+import { MmixDocument } from "./MmixDocument";
 export class MmixCompletionItemProvider
   implements vscode.CompletionItemProvider {
   public provideCompletionItems(
@@ -9,24 +10,25 @@ export class MmixCompletionItemProvider
     position: vscode.Position,
     token: vscode.CancellationToken
   ): Thenable<vscode.CompletionItem[]> {
+    let results: vscode.CompletionItem[] = [];
+
+    try{
     const inputStream = new InputStream(document.getText());
     const tokenStream = new TokenStream(inputStream);
+    const parser = new TokenParser(tokenStream);
 
-    try {
-      while (!tokenStream.eof()) {
-        const next = tokenStream.next();
-        console.log(next);
-      }
-    } catch (e) {
-      console.error(e);
+    const program = parser.parse();
+
+    const mmixDocument = new MmixDocument(program);
+
+    results = mmixDocument
+    .getMatchingLabels(position)
+    .map(label => new vscode.CompletionItem(label.name, vscode.CompletionItemKind.Constant))
+
+    }catch(error){
+      console.error(error);
     }
 
-    const mmixDocument = MmixDocumentParser.parse(document);
-
-    return Promise.resolve(
-      mmixDocument
-        .getMatchingLabels(position)
-        .map(label => new vscode.CompletionItem(label.name))
-    );
+    return Promise.resolve(results);
   }
 }
