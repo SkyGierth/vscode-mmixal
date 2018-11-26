@@ -15,8 +15,7 @@ import { Range, Position } from "vscode";
 import { MissingRegister } from "../MissingRegister";
 
 export class TokenParser {
-
-  constructor(private _tokenStream: TokenStream) { }
+  constructor(private _tokenStream: TokenStream) {}
 
   public parse(): Program {
     const operations: (Operation | Label)[] = [];
@@ -28,11 +27,18 @@ export class TokenParser {
       } else if (token.type === TokenType.Label) {
         operations.push(this.parseLabel());
       } else {
-        throw new Error(`Could not parse ${token.type} at ${token.range.start.line}:${token.range.start.character} to ${token.range.end.line}:${token.range.end.character}`)
+        throw new Error(
+          `Could not parse ${token.type} at ${token.range.start.line}:${
+            token.range.start.character
+          } to ${token.range.end.line}:${token.range.end.character}`
+        );
       }
     }
 
-    return new Program(operations, new Range(new Position(0, 0), this._tokenStream.position));
+    return new Program(
+      operations,
+      new Range(new Position(0, 0), this._tokenStream.position)
+    );
   }
 
   private parseLabel(): Label {
@@ -47,25 +53,33 @@ export class TokenParser {
     const token = this._tokenStream.next();
     const args = this.parseOperationArguments();
 
-    const endPosition = args.length > 0 ? args[args.length - 1].range.end : token!.range.end;
+    const endPosition =
+      args.length > 0 ? args[args.length - 1].range.end : token!.range.end;
     const range = new Range(token!.range.start, endPosition);
 
     if (token!.value === "IS") {
       let value = new MissingPrimitive(new Range(endPosition, endPosition));
 
-      if(args.length === 1){
+      if (args.length === 1) {
         value = args[0];
       }
 
       return new IsOperation(value, range);
     } else if (token!.value === "SET") {
-      let register: Register | LabelReference = new MissingRegister(new Range(range.end, range.end))
-      let value: Primitive = new MissingPrimitive(new Range(range.end, range.end))
-      if(args.length === 2){
+      let register: Register | LabelReference = new MissingRegister(
+        new Range(range.end, range.end)
+      );
+      let value: Primitive = new MissingPrimitive(
+        new Range(range.end, range.end)
+      );
+      if (args.length === 2) {
         const primRegister = args[0];
         const primValue = args[1];
 
-        if (primRegister instanceof Register || primRegister instanceof LabelReference) {
+        if (
+          primRegister instanceof Register ||
+          primRegister instanceof LabelReference
+        ) {
           register = primRegister;
           value = primValue;
         }
@@ -102,7 +116,10 @@ export class TokenParser {
     const args: Primitive[] = [];
 
     let token: Token | null;
-    while ((token = this._tokenStream.peek()) !== null && this.isOperationArgumentTokenType(token)) {
+    while (
+      (token = this._tokenStream.peek()) !== null &&
+      this.isOperationArgumentTokenType(token)
+    ) {
       let arg = this.parseOperationArgument();
       args.push(arg);
 
@@ -114,7 +131,6 @@ export class TokenParser {
 
       this._tokenStream.next();
     }
-
 
     return args;
   }
@@ -132,35 +148,48 @@ export class TokenParser {
   }
 }
 
-export class IsOperation extends OperationWith1Arg<Primitive>{
+export class IsOperation extends OperationWith1Arg<Primitive> {
   constructor(arg: Primitive, range: Range) {
-    super("IS", arg, range);
+    super("IS", arg, range, "Sets an alias for a label");
   }
 
-  isMatchingArgument(element: Primitive, position: number): boolean{
-    if(position === 0){
-      return !(element instanceof Operation || element instanceof Label)
+  isMatchingArgument(element: Primitive, position: number): boolean {
+    if (position === 0) {
+      return !(element instanceof Operation || element instanceof Label);
     }
 
     return false;
   }
 }
 
-export class SetOperation extends OperationWith2Args<Register | LabelReference, Primitive> {
-  constructor(register: Register | LabelReference, value: Primitive, range: Range) {
-    super("SET", register, value, range);
+export class SetOperation extends OperationWith2Args<
+  Register | LabelReference,
+  Primitive
+> {
+  constructor(
+    register: Register | LabelReference,
+    value: Primitive,
+    range: Range
+  ) {
+    super("SET", register, value, range, "Stores a value in a register");
   }
 
-  isMatchingArgument(element: Primitive, position: number, labelDefinitions: Label[] = []): boolean{
-    if(position === 0){
-      if(element instanceof Register){
+  isMatchingArgument(
+    element: Primitive,
+    position: number,
+    labelDefinitions: Label[] = []
+  ): boolean {
+    if (position === 0) {
+      if (element instanceof Register) {
         return true;
       }
 
-      if(element instanceof LabelReference){
-        const labelDefinition = labelDefinitions.find(x => x.name === element.value);
+      if (element instanceof LabelReference) {
+        const labelDefinition = labelDefinitions.find(
+          x => x.name === element.value
+        );
 
-        if(labelDefinition && labelDefinition.definition instanceof Register){
+        if (labelDefinition && labelDefinition.definition instanceof Register) {
           return true;
         }
       }
@@ -169,4 +198,3 @@ export class SetOperation extends OperationWith2Args<Register | LabelReference, 
     return false;
   }
 }
-

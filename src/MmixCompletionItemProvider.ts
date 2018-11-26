@@ -12,20 +12,25 @@ export class MmixCompletionItemProvider
   ): Thenable<vscode.CompletionItem[]> {
     let results: vscode.CompletionItem[] = [];
 
-    try{
-    const inputStream = new InputStream(document.getText());
-    const tokenStream = new TokenStream(inputStream);
-    const parser = new TokenParser(tokenStream);
+    try {
+      const inputStream = new InputStream(document.getText());
+      const tokenStream = new TokenStream(inputStream);
+      const parser = new TokenParser(tokenStream);
 
-    const program = parser.parse();
+      const program = parser.parse();
 
-    const mmixDocument = new MmixDocument(program);
+      const mmixDocument = new MmixDocument(program);
 
-    results = mmixDocument
-    .getMatchingLabels(position)
-    .map(label => new vscode.CompletionItem(label.name, vscode.CompletionItemKind.Constant))
-
-    }catch(error){
+      results = mmixDocument
+        .getMatchingLabels(position)
+        .map(
+          label =>
+            new vscode.CompletionItem(
+              label.name,
+              vscode.CompletionItemKind.Constant
+            )
+        );
+    } catch (error) {
       console.error(error);
     }
 
