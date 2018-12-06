@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { Program } from "./parsing/Program";
 import { Label } from "./parsing/Label";
 import { Operation } from "./parsing/Operation";
-import { IsOperation } from "./parsing/TokenParser";
+import { IsOperation } from "./parsing/operations/IsOperation";
 import { LabelReference } from "./parsing/LabelReference";
 import { Element } from "./parsing/Element";
 

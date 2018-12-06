@@ -2,7 +2,7 @@ import { TokenStream } from "./TokenStream";
 import { Token } from "./Token";
 import { TokenType } from "./TokenType";
 import { Program } from "./Program";
-import { Operation, OperationWith1Arg, OperationWith2Args } from "./Operation";
+import { Operation } from "./Operation";
 import { Primitive } from "./Primitive";
 import { LabelReference } from "./LabelReference";
 import { Number } from "./Number";
@@ -13,6 +13,8 @@ import { SpecialRegister } from "./SpecialRegister";
 import { MissingPrimitive } from "./MissingPrimitive";
 import { Range, Position } from "vscode";
 import { MissingRegister } from "../MissingRegister";
+import { SetOperation } from "./operations/SetOperation";
+import { IsOperation } from "./operations/IsOperation";
 
 export class TokenParser {
   constructor(private _tokenStream: TokenStream) {}
@@ -145,56 +147,5 @@ export class TokenParser {
         TokenType.String
       ].indexOf(token.type) > -1
     );
-  }
-}
-
-export class IsOperation extends OperationWith1Arg<Primitive> {
-  constructor(arg: Primitive, range: Range) {
-    super("IS", arg, range, "Sets an alias for a label");
-  }
-
-  isMatchingArgument(element: Primitive, position: number): boolean {
-    if (position === 0) {
-      return !(element instanceof Operation || element instanceof Label);
-    }
-
-    return false;
-  }
-}
-
-export class SetOperation extends OperationWith2Args<
-  Register | LabelReference,
-  Primitive
-> {
-  constructor(
-    register: Register | LabelReference,
-    value: Primitive,
-    range: Range
-  ) {
-    super("SET", register, value, range, "Stores a value in a register");
-  }
-
-  isMatchingArgument(
-    element: Primitive,
-    position: number,
-    labelDefinitions: Label[] = []
-  ): boolean {
-    if (position === 0) {
-      if (element instanceof Register) {
-        return true;
-      }
-
-      if (element instanceof LabelReference) {
-        const labelDefinition = labelDefinitions.find(
-          x => x.name === element.value
-        );
-
-        if (labelDefinition && labelDefinition.definition instanceof Register) {
-          return true;
-        }
-      }
-    }
-
-    return false;
   }
 }

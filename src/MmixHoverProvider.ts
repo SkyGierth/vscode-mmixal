@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { InputStream } from "./parsing/InputStream";
 import { TokenStream } from "./parsing/TokenStream";
-import { TokenParser, IsOperation } from "./parsing/TokenParser";
+import { TokenParser } from "./parsing/TokenParser";
+import { IsOperation } from "./parsing/operations/IsOperation";
 import { MmixDocument } from "./MmixDocument";
 import { LabelReference } from "./parsing/LabelReference";
 import { Register } from "./parsing/Register";

@@ -4,6 +4,7 @@ const vscode = require("vscode");
 const InputStream_1 = require("./parsing/InputStream");
 const TokenStream_1 = require("./parsing/TokenStream");
 const TokenParser_1 = require("./parsing/TokenParser");
+const IsOperation_1 = require("./parsing/operations/IsOperation");
 const MmixDocument_1 = require("./MmixDocument");
 const LabelReference_1 = require("./parsing/LabelReference");
 const Register_1 = require("./parsing/Register");
@@ -21,7 +22,7 @@ class MmixHoverProvider {
             if (currentElement && currentElement instanceof LabelReference_1.LabelReference) {
                 const label = mmixDocument.getLabelDefinition(currentElement);
                 if (label) {
-                    if (label.definition instanceof TokenParser_1.IsOperation) {
+                    if (label.definition instanceof IsOperation_1.IsOperation) {
                         let definition = label.definition.arg.value;
                         if (label.definition.arg instanceof Register_1.Register) {
                             definition = "$" + definition;
