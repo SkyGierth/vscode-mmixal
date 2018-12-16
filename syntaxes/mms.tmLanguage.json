@@ -42,7 +42,7 @@
       "patterns": [
         {
           "name": "comment",
-          "match": "\\s[%/].*"
+          "match": "[%/].*"
         }
       ]
     },

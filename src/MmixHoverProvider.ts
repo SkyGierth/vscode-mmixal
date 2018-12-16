@@ -53,12 +53,11 @@ export class MmixHoverProvider implements vscode.HoverProvider {
             );
           }
         }
-      } else if (
-        currentElement instanceof Operation &&
-        currentElement.description
-      ) {
+      } else if (currentElement instanceof Operation) {
         result = new vscode.Hover(
-          `**${currentElement.operationCode}**: ${currentElement.description}`
+          `**${
+            currentElement.operationCode
+          }**: ${currentElement.getDescription()}`
         );
       }
     } catch (error) {

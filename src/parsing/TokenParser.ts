@@ -11,10 +11,13 @@ import { Register } from "./Register";
 import { Label } from "./Label";
 import { SpecialRegister } from "./SpecialRegister";
 import { MissingPrimitive } from "./MissingPrimitive";
+import { MissingNumber } from "./MissingNumber";
 import { Range, Position } from "vscode";
 import { MissingRegister } from "../MissingRegister";
 import { SetOperation } from "./operations/SetOperation";
 import { IsOperation } from "./operations/IsOperation";
+import { CmpOperation } from "./operations/CmpOperation";
+import { DivOperation } from "./operations/DivOperation";
 
 export class TokenParser {
   constructor(private _tokenStream: TokenStream) {}
@@ -87,6 +90,39 @@ export class TokenParser {
         }
       }
       return new SetOperation(register, value, range);
+    } else if (["CMP", "DIV"].indexOf(token!.value) > -1) {
+      let register: Register | LabelReference = new MissingRegister(
+        new Range(range.end, range.end)
+      );
+
+      let valueA: Number | LabelReference = new MissingNumber(
+        new Range(range.end, range.end)
+      );
+      let valueB: Number | LabelReference = new MissingNumber(
+        new Range(range.end, range.end)
+      );
+
+      if (args.length === 3) {
+        const param1 = args[0];
+        const param2 = args[1];
+        const param3 = args[2];
+
+        if (param1 instanceof Register || param1 instanceof LabelReference) {
+          register = param1;
+        }
+        if (param2 instanceof Number || param1 instanceof LabelReference) {
+          valueA = param2;
+        }
+        if (param3 instanceof Number || param1 instanceof LabelReference) {
+          valueB = param3;
+        }
+      }
+
+      if (token!.value === "CMP") {
+        return new CmpOperation(register, valueA, valueB, range);
+      } else if (token!.value === "DIV") {
+        return new DivOperation(register, valueA, valueB, range);
+      }
     }
 
     return new Operation(token!.value, args, range);

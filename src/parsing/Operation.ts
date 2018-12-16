@@ -9,8 +9,7 @@ export class Operation<TArgs extends Element = Primitive> extends Element {
   constructor(
     public operationCode: string,
     public operationArguments: TArgs[],
-    public readonly range: Range,
-    public readonly description?: string
+    public readonly range: Range
   ) {
     super();
   }
@@ -22,18 +21,17 @@ export class Operation<TArgs extends Element = Primitive> extends Element {
   ): boolean {
     return true;
   }
+
+  public getDescription(): string {
+    return "";
+  }
 }
 
 export class OperationWith1Arg<TArg1 extends Primitive> extends Operation<
   TArg1
 > {
-  constructor(
-    operationCode: string,
-    public arg: TArg1,
-    range: Range,
-    description?: string
-  ) {
-    super(operationCode, [arg], range, description);
+  constructor(operationCode: string, public arg: TArg1, range: Range) {
+    super(operationCode, [arg], range);
   }
 }
 
@@ -45,10 +43,9 @@ export class OperationWith2Args<
     operationCode: string,
     public arg1: TArg1,
     public arg2: TArg2,
-    range: Range,
-    description?: string
+    range: Range
   ) {
-    super(operationCode, [arg1, arg2], range, description);
+    super(operationCode, [arg1, arg2], range);
   }
 }
 export class OperationWith3Args<
@@ -61,9 +58,8 @@ export class OperationWith3Args<
     public arg1: TArg1,
     public arg2: TArg2,
     public arg3: TArg3,
-    range: Range,
-    description?: string
+    range: Range
   ) {
-    super(operationCode, [arg1, arg2, arg3], range, description);
+    super(operationCode, [arg1, arg2, arg3], range);
   }
 }

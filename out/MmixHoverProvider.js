@@ -39,9 +39,8 @@ class MmixHoverProvider {
                     }
                 }
             }
-            else if (currentElement instanceof Operation_1.Operation &&
-                currentElement.description) {
-                result = new vscode.Hover(`**${currentElement.operationCode}**: ${currentElement.description}`);
+            else if (currentElement instanceof Operation_1.Operation) {
+                result = new vscode.Hover(`**${currentElement.operationCode}**: ${currentElement.getDescription()}`);
             }
         }
         catch (error) {

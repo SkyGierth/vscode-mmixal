@@ -9,12 +9,26 @@ export class SetOperation extends OperationWith2Args<
   Primitive
 > {
   constructor(
-    register: Register | LabelReference,
-    value: Primitive,
+    private register: Register | LabelReference,
+    private value: Primitive,
     range: Range
   ) {
-    super("SET", register, value, range, "Stores a value in a register");
+    super("SET", register, value, range);
   }
+
+  getDescription(): string {
+    let value = this.value.type === "Missing" ? "a value" : this.value.value;
+    let register = "a register";
+
+    if (this.register instanceof Register) {
+      register = "$" + this.register.value;
+    } else {
+      register = this.register.value;
+    }
+
+    return `Stores ${value} in ${register}.`;
+  }
+
   isMatchingArgument(
     element: Primitive,
     position: number,

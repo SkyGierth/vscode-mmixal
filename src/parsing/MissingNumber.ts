@@ -1,10 +1,10 @@
 import { ElementType } from "./ElementType";
-import { Primitive } from "./Primitive";
 import { Range } from "vscode";
-export class MissingPrimitive extends Primitive<string> {
+import { Number } from "./Number";
+export class MissingNumber extends Number {
   public readonly type: ElementType = ElementType.Missing;
-  public readonly value: string = "";
+  public readonly value: number = -1;
   constructor(public readonly range: Range) {
-    super();
+    super(-1, range);
   }
 }
